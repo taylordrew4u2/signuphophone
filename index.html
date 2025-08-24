@@ -524,53 +524,29 @@ function renderFormPage(formId) {
           <input name="cashapp" value="${escapeAttr(form.cashapp||'')}" placeholder="Cash App link" />
           <input name="fields" value="${escapeAttr((form.fields||[]).join(', '))}" placeholder="Fields (comma-separated)" />
           <button>Save Changes</button>
-        // Add signup
-        document.getElementById('signupForm').addEventListener('submit', (e)=>{
-          e.preventDefault();
-          const fd = new FormData(e.currentTarget);
-          const full = (fd.get('Full name')||'').toString().trim();
-          if (!full) { alert('Full name is required.'); return; }
-          const email = (fd.get('Email')||'').toString().trim();
-          const extra = {};
-          (form.fields||[]).forEach(lbl => extra[lbl] = (fd.get(lbl)||'').toString());
-          form.signups.unshift({
-            id: uuid(),
-            full_name: full,
-            email,
-            extra,
-            paid:false,
-            completed:false,
-            created_at: new Date().toISOString()
-          });
-          saveDB(db);
-          console.log('Signups after add:', form.signups);
-          e.target.reset();
-          // Rerender the list section only
-          setTimeout(() => {
-            const listSection = document.querySelector('section:last-of-type .list');
-            if (listSection) {
-              listSection.innerHTML = `
-                <div class="list-head">
-                  <div class="cell">Guest</div>
-                  <div class="cell">Email</div>
-                  <div class="cell">Paid</div>
-                  <div class="cell">Completed</div>
-                </div>
-                ${form.signups.length ? form.signups.map(s => signupRowHTML(formId, s)).join('') :
-                  `<div class="cell muted">No signups yet.</div>`}
-              `;
-              // Reattach toggle handlers for new rows
-              listSection.querySelectorAll('[data-action="toggle-paid"]').forEach(el=>{
-                attachToggleHandlers(el, formId, 'paid');
-              });
-              listSection.querySelectorAll('[data-action="toggle-completed"]').forEach(el=>{
-                attachToggleHandlers(el, formId, 'completed');
-              });
-            } else {
-              renderFormPage(formId);
-            }
-          }, 0);
-        });
+        </form>
+      </details>
+      <div class="row" style="gap:24px; margin-top:12px;">
+        ${form.venmo ? `<div style="display:flex;flex-direction:column;align-items:center;"><div style="font-size:12px;font-weight:600;">Venmo</div><div id="qr-venmo"></div></div>` : ''}
+        ${form.cashapp ? `<div style="display:flex;flex-direction:column;align-items:center;"><div style="font-size:12px;font-weight:600;">Cash App</div><div id="qr-cash"></div></div>` : ''}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Add signup</h2>
+      <form id="signupForm" style="display:grid; gap:10px; max-width:720px; margin-top:10px;">
+        ${renderField('Full name', true)}
+        ${renderField('Email')}
+        ${(form.fields||[]).map(lbl => renderField(lbl)).join('')}
+        <button>Add</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Signups</h2>
+      <div class="list">
+        <div class="list-head">
+          <div class="cell">Guest</div>
           <div class="cell">Email</div>
           <div class="cell">Paid</div>
           <div class="cell">Completed</div>
