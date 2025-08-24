@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sign-Up Sheets with QR (Local Only)</title>
+    <style>
+         :root {
+            --border: #e6e6e6;
+            --muted: #666;
+            --ink: #111;
+            --bg: #fafafa;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+            color: #111;
+        }
+        
+        nav {
+            display: flex;
+            gap: 16px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 10;
+        }
+        
+        nav a {
+            text-decoration: none;
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+        
+        main {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 12px;
+        }
+        
+        h1,
+        h2 {
+            margin: 0 0 10px;
+        }
+        
+        section {
+            margin: 18px 0;
+        }
+        
+        input,
+        textarea,
+        select,
+        button {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        input,
+        textarea {
+            width: 100%;
+        }
+        
+        button {
+            cursor: pointer;
+        }
+        
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        
+        .list {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .list-head,
+        .list-row {
+            display: grid;
+            grid-template-columns: 1fr 120px 140px 140px;
+            align-items: center;
+        }
+        
+        .list-head {
+            background: var(--bg);
+            font-weight: 600;
+            padding: 8px 10px;
+        }
+        
+        .list-row {
+            border-top: 1px solid var(--border);
+        }
+        
+        .cell {
+            padding: 10px;
+        }
+        
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+        }
+        
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        
+        .box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #777;
+            vertical-align: middle;
+            margin-right: 8px;
+            background: #fff;
+        }
+        
+        .box.on {
+            background: #111;
+        }
+        
+        .qr-wrap {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .qr-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            width: 230px;
+        }
+        
+        .qr-card canvas {
+            display: block;
+            margin: 8px 0;
+        }
+        
+        .link {
+            color: #06f;
+            text-decoration: underline;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th,
+        .table td {
+            padding: 10px;
+            border-top: 1px solid var(--border);
+            text-align: left;
+            vertical-align: top;
+        }
+        
+        details>summary {
+            cursor: pointer;
+        }
+        
+        .danger {
+            color: #b00020;
+        }
+        
+        @media (max-width:800px) {
+            .list-head,
+            .list-row {
+                grid-template-columns: 1fr 100px 110px 110px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <a href="#/forms">Forms</a>
+        <a href="#/guests">Guests</a>
+        <a id="exportBtn" href="javascript:void(0)">Export</a>
+        <a id="importBtn" href="javascript:void(0)">Import</a>
+        <a id="clearBtn" class="danger" href="javascript:void(0)">Clear All (local)</a>
+    </nav>
+    <main id="app"></main>
+
+    <!-- Minimal QRCode generator (QRCode.js, MIT license, inlined) -->
+    <script>
+        /*!
+         * qrcode.js - https://github.com/davidshimjs/qrcodejs
+         * MIT License
+         * (minified & lightly trimmed)
+         */
+        ! function(o) {
+            function l(a, b) {
+                this._el = a, this._htOption = b
+            }
+
+            function k(a, b) {
+                if ("string" == typeof a && (a = document.getElementById(a)), this._el = a, this._htOption = b || {}, this._htOption.text = this._htOption.text || "", this._htOption.width = this._htOption.width || 256, this._htOption.height = this._htOption.height || 256, this._htOption.colorDark = this._htOption.colorDark || "#000000", this._htOption.colorLight = this._htOption.colorLight || "#ffffff", this._htOption.correctLevel = this._htOption.correctLevel || d.H, this._oQRCode = null, this._oDrawing = null, this._el.style.position = "relative", this._htOption.useSVG) {
+                    this._oDrawing = new m(this._el, this._htOption)
+                } else {
+                    this._oDrawing = new l(this._el, this._htOption)
+                }
+                this.makeCode(this._htOption.text)
+            }
+
+            function m(a, b) {
+                this._el = a, this._htOption = b
+            }
+
+            function n() {
+                this.buffer = [], this.length = 0
+            }
+
+            function p(a, b) {
+                this.typeNumber = a, this.errorCorrectLevel = b, this.modules = null, this.moduleCount = 0, this.dataCache = null, this.dataList = []
+            }
+            var d = {
+                L: 1,
+                M: 0,
+                Q: 3,
+                H: 2
+            };
+            k.prototype.makeCode = function(a) {
+                this._oQRCode = new p(e(a), this._htOption.correctLevel), this._oQRCode.addData(a), this._oQRCode.make(), this._el.innerHTML = "", this._oDrawing.draw(this._oQRCode)
+            }, l.prototype.draw = function(a) {
+                var b = this._htOption,
+                    c = this._el,
+                    d = a.getModuleCount(),
+                    e = b.width / d,
+                    f = b.height / d,
+                    g = Math.round,
+                    h = document.createElement("canvas");
+                h.width = b.width, h.height = b.height;
+                var i = h.getContext("2d");
+                i.fillStyle = b.colorLight, i.fillRect(0, 0, b.width, b.height);
+                for (var j = 0; j < d; j++)
+                    for (var k = 0; k < d; k++) a.isDark(j, k) && (i.fillStyle = b.colorDark, i.fillRect(g(k * e), g(j * f), g(e), g(f)));
+                c.appendChild(h)
+            };
+            m.prototype.draw = function(a) {
+                var b = this._htOption,
+                    c = this._el,
+                    d = a.getModuleCount(),
+                    e = b.width / d,
+                    f = b.height / d,
+                    g = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                g.setAttribute("width", String(b.width)), g.setAttribute("height", String(b.height)), g.setAttribute("viewBox", "0 0 " + String(b.width) + " " + String(b.height)), g.setAttribute("fill", b.colorDark);
+                var h = "";
+                for (var i = 0; i < d; i++)
+                    for (var j = 0; j < d; j++) a.isDark(i, j) && (h += "M" + (j * e) + "," + (i * f) + " h" + e + " v" + f + " h-" + e + " Z ");
+                var k = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                k.setAttribute("d", h), k.setAttribute("fill", b.colorDark);
+                var l = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                l.setAttribute("width", "100%"), l.setAttribute("height", "100%"), l.setAttribute("fill", b.colorLight), g.appendChild(l), g.appendChild(k), c.appendChild(g)
+            };
+
+            function e(a) {
+                for (var b = 1, c = 0, d = 0; d < a.length; d++) c += a.charCodeAt(d) < 128 ? 1 : a.charCodeAt(d) < 2048 ? 2 : a.charCodeAt(d) < 65536 ? 3 : 4;
+                for (; b < 40 && f(b, c) > 0;) b++;
+                return b
+            }
+
+            function f(a, b) {
+                return u[a] - b
+            }
+            var u = [0, 0, 19, 34, 55, 80, 108, 136, 156, 194, 232, 274, 324, 370, 428, 461, 523, 589, 647, 721, 795, 861, 932, 1006, 1094, 1174, 1276, 1370, 1468, 1531, 1631, 1735, 1843, 1955, 2071, 2191, 2306, 2434, 2566, 2702];
+            n.prototype = {
+                get: function(a) {
+                    return 1 == (this.buffer[Math.floor(a / 8)] >>> 7 - a % 8 & 1)
+                },
+                put: function(a, b) {
+                    for (var c = 0; c < b; c++) this.putBit(1 == (a >>> b - c - 1 & 1))
+                },
+                putBit: function(a) {
+                    var b = Math.floor(this.length / 8);
+                    this.buffer.length <= b && this.buffer.push(0), a && (this.buffer[b] |= 128 >>> this.length % 8), this.length++
+                }
+            };
+            p.prototype.addData = function(a) {
+                this.dataList.push(new q(a))
+            }, p.prototype.isDark = function(a, b) {
+                if (!this.modules || a < 0 || this.moduleCount <= a || b < 0 || this.moduleCount <= b) throw new Error(a + "," + b);
+                return this.modules[a][b]
+            };
+            p.prototype.getModuleCount = function() {
+                return this.moduleCount
+            };
+            p.prototype.make = function() {
+                this.moduleCount = 4 * this.typeNumber + 17, this.modules = new Array(this.moduleCount);
+                for (var a = 0; a < this.moduleCount; a++) {
+                    this.modules[a] = new Array(this.moduleCount);
+                    for (var b = 0; b < this.moduleCount; b++) this.modules[a][b] = null
+                }
+                r(this, this.typeNumber);
+                for (var c = 0; c < this.dataList.length; c++) {
+                    var d = this.dataList[c];
+                    t(this, d)
+                }
+                v(this)
+            };
+
+            function q(a) {
+                this.data = a
+            }
+
+            function r(a) {
+                for (var b = a.moduleCount, c = 0; c < b; c++)
+                    for (var d = 0; d < b; d++)
+                        if (null === a.modules[c][d]) {
+                            var e = 0;
+                            ((0 === c || c === b - 1 || 0 === d || d === b - 1) && (e = 1), a.modules[c][d] = e % 2 == 0)
+                        }
+            }
+
+            function t(a, b) {
+                for (var c = new n, d = 0; d < b.data.length; d++) {
+                    var e = b.data.charCodeAt(d);
+                    c.put(e, 8)
+                }
+                w(a, c)
+            }
+
+            function w(a, b) {
+                for (var c = 0, d = 0, e = a.moduleCount - 1, f = a.moduleCount - 1; f > 0; f -= 2) {
+                    6 == f && f--;
+                    for (;;) {
+                        for (var g = 0; g < 2; g++)
+                            if (null === a.modules[e][f - g]) {
+                                var h = !1;
+                                c < b.length && (h = b.get(c)), a.modules[e][f - g] = h, c++
+                            }
+                        if (d ? !((e += 1) < a.moduleCount) : (e -= 1) < 0) break
+                    }
+                    d = !d
+                }
+            }
+
+            function v(a) {
+                for (var b = a.moduleCount, c = 0; c < b; c++)
+                    for (var d = 0; d < b; d++) null === a.modules[c][d] && (a.modules[c][d] = !1)
+            }
+            o.QRCode = k, o.QRErrorCorrectLevel = d
+        }(window);
+    </script>
+
+    <script>
+        /* ========= Local "DB" ========= */
+        const STORAGE_KEY = 'qrSignupData_v1';
+
+        function loadDB() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : {
+                    forms: []
+                };
+            } catch {
+                return {
+                    forms: []
+                };
+            }
+        }
+
+        function saveDB(db) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+        }
+
+        function uuid() {
+            return Math.random().toString(36).slice(2) + Date.now().toString(36);
+        }
+
+        /* ========= Router ========= */
+        const app = document.getElementById('app');
+        window.addEventListener('hashchange', render);
+        document.addEventListener('DOMContentLoaded', render);
+
+        function render() {
+            const hash = location.hash || '#/forms';
+            if (hash.startsWith('#/form/')) {
+                const id = hash.split('/')[2];
+                renderFormPage(id);
+            } else if (hash.startsWith('#/guests')) {
+                renderGuests();
+            } else {
+                renderFormsHome();
+            }
+        }
+
+        /* ========= Views ========= */
+        function renderFormsHome() {
+            const db = loadDB();
+            app.innerHTML = `
+    <section>
+      <h1>Your Forms</h1>
+      ${db.forms.length ? '' : `<div class="muted">No forms yet. Create one below.</div>`}
+      <div style="display:grid; gap:12px;">
+        ${db.forms.map(f => `
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:600">${escapeHTML(f.title)}</div>
+                <div class="muted">${(f.fields||[]).join(' • ')}</div>
+                <div class="muted">
+                  ${f.venmo ? `<span class="pill">Venmo</span>`:''}
+                  ${f.cashapp ? `<span class="pill">Cash App</span>`:''}
+                </div>
+              </div>
+              <div class="row">
+                <a class="link" href="#/form/${f.id}">Open</a>
+                <a class="link danger" href="javascript:void(0)" data-action="delete-form" data-id="${f.id}">Delete</a>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Create a New Form</h2>
+      <div class="muted">Fields are editable (comma-separated). “Full name” & “Email” are automatically included.</div>
+      <form id="createForm" style="display:grid; gap:10px; max-width:700px; margin-top:8px;">
+        <input name="title" placeholder="Form title (e.g., Pins & Needles — 9PM)" required />
+        <input name="venmo" placeholder="Venmo link (https://venmo.com/u/handle)" />
+        <input name="cashapp" placeholder="Cash App link (https://cash.app/$cashtag)" />
+        <input name="fields" placeholder="Custom fields (comma-separated). Example: Phone, Notes" />
+        <button>Create Form</button>
+      </form>
+    </section>
+  `;
+
+  document.getElementById('createForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const title = (fd.get('title')||'').toString().trim();
+    const venmo = (fd.get('venmo')||'').toString().trim();
+    const cashapp = (fd.get('cashapp')||'').toString().trim();
+    const fields = (fd.get('fields')||'').toString()
+      .split(',').map(s=>s.trim()).filter(Boolean);
+    const db = loadDB();
+    db.forms.unshift({
+      id: uuid(),
+      title, venmo, cashapp,
+      fields,
+      signups: []
+    });
+    saveDB(db);
+    e.target.reset();
+    render();
+  });
+
+  app.querySelectorAll('[data-action="delete-form"]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.getAttribute('data-id');
+      const db = loadDB();
+      const idx = db.forms.findIndex(f=>f.id===id);
+      if (idx>=0 && confirm('Delete this form and all its signups?')) {
+        db.forms.splice(idx,1);
+        saveDB(db);
+        render();
+      }
+    });
+  });
+}
+
+function renderFormPage(formId) {
+  const db = loadDB();
+  const form = db.forms.find(f=>f.id===formId);
+  if (!form) { app.innerHTML = `<div class="card">Form not found. <a class="link" href="#/forms">Back</a></div>`; return; }
+
+  app.innerHTML = `
+    <section>
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h1>${escapeHTML(form.title)}</h1>
+        <a class="link" href="#/forms">Back to Forms</a>
+      </div>
+      <div class="muted">Each list is tied to this form. Edit fields/links below.</div>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary><b>Edit Form</b></summary>
+        <form id="editForm" style="display:grid; gap:10px; max-width:720px; margin-top:10px;">
+          <input name="title" value="${escapeAttr(form.title)}" placeholder="Title" required />
+          <input name="venmo" value="${escapeAttr(form.venmo||'')}" placeholder="Venmo link" />
+          <input name="cashapp" value="${escapeAttr(form.cashapp||'')}" placeholder="Cash App link" />
+          <input name="fields" value="${escapeAttr((form.fields||[]).join(', '))}" placeholder="Fields (comma-separated)" />
+          <button>Save Changes</button>
+        </form>
+      </details>
+    </section>
+
+    <section>
+      <h2>Pay by QR (scan)</h2>
+      <div class="qr-wrap">
+        <div class="qr-card">
+          <div style="font-weight:600">Venmo</div>
+          <div id="qr-venmo"></div>
+          <div class="muted">${form.venmo ? escapeHTML(form.venmo) : 'No Venmo link set'}</div>
+        </div>
+        <div class="qr-card">
+          <div style="font-weight:600">Cash App</div>
+          <div id="qr-cash"></div>
+          <div class="muted">${form.cashapp ? escapeHTML(form.cashapp) : 'No Cash App link set'}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Sign Up</h2>
+      <form id="signupForm" style="display:grid; gap:10px; max-width:750px;">
+        ${renderField('Full name', true)}
+        ${renderField('Email', false, 'email')}
+        ${(form.fields||[]).map(lbl => renderField(lbl)).join('')}
+        <button>Add to List</button>
+      </form>
+      <div class="muted" style="margin-top:6px;">
+        Tap Paid/Completed to toggle. <b>Double-tap</b> clears.
+      </div>
+    </section>
+
+    <section>
+      <h2>List for this Form</h2>
+      <div class="list">
+        <div class="list-head">
+          <div class="cell">Guest</div>
+          <div class="cell">Email</div>
+          <div class="cell">Paid</div>
+          <div class="cell">Completed</div>
+        </div>
+        ${form.signups.length ? form.signups.map(s => signupRowHTML(formId, s)).join('') :
+          `<div class="cell muted">No signups yet.</div>`}
+      </div>
+    </section>
+  `;
+
+  // QR render
+  if (form.venmo) new QRCode(document.getElementById('qr-venmo'), { text: form.venmo, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
+  if (form.cashapp) new QRCode(document.getElementById('qr-cash'), { text: form.cashapp, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
+
+  // Edit form
+  document.getElementById('editForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    form.title = fd.get('title').toString().trim();
+    form.venmo = fd.get('venmo').toString().trim();
+    form.cashapp = fd.get('cashapp').toString().trim();
+    form.fields = fd.get('fields').toString().split(',').map(s=>s.trim()).filter(Boolean);
+    saveDB(db);
+    renderFormPage(formId);
+  });
+
+  // Add signup
+  document.getElementById('signupForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const full = (fd.get('Full name')||'').toString().trim();
+    if (!full) { alert('Full name is required.'); return; }
+    const email = (fd.get('Email')||'').toString().trim();
+    const extra = {};
+    // include all user-defined fields
+    (form.fields||[]).forEach(lbl => extra[lbl] = (fd.get(lbl)||'').toString());
+    form.signups.unshift({
+      id: uuid(),
+      full_name: full,
+      email,
+      extra,
+      paid:false,
+      completed:false,
+      created_at: new Date().toISOString()
+    });
+    saveDB(db);
+    e.target.reset();
+    renderFormPage(formId);
+  });
+
+  // Toggle handlers (click = toggle, dblclick = clear)
+  app.querySelectorAll('[data-action="toggle-paid"]').forEach(el=>{
+    attachToggleHandlers(el, formId, 'paid');
+  });
+  app.querySelectorAll('[data-action="toggle-completed"]').forEach(el=>{
+    attachToggleHandlers(el, formId, 'completed');
+  });
+}
+
+function renderGuests() {
+  const db = loadDB();
+  const rows = [];
+  db.forms.forEach(f=>{
+    (f.signups||[]).forEach(s=>{
+      rows.push({ form:f, s });
+    });
+  });
+  rows.sort((a,b)=> (a.s.created_at < b.s.created_at) ? 1 : -1);
+
+  app.innerHTML = `
+    <section>
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h1>Guests (All Forms)</h1>
+        <a class="link" href="#/forms">Back to Forms</a>
+      </div>
+    </section>
+
+    <section class="card">
+      ${rows.length ? `
+      <table class="table">
+        <thead><tr>
+          <th>Form</th><th>Name</th><th>Email</th><th>Paid</th><th>Completed</th><th>Fields</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(({form,s})=>`
+            <tr>
+              <td>${escapeHTML(form.title)}</td>
+              <td>${escapeHTML(s.full_name)}</td>
+              <td>${escapeHTML(s.email||'')}</td>
+              <td>${s.paid ? 'Yes' : 'No'}</td>
+              <td>${s.completed ? 'Yes' : 'No'}</td>
+              <td>${Object.entries(s.extra||{}).map(([k,v])=>`<b>${escapeHTML(k)}:</b> ${escapeHTML(String(v))}`).join(' &nbsp; ')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>` : `<div class="muted">No guests yet.</div>`}
+    </section>
+  `;
+}
+
+/* ========= Helpers ========= */
+function renderField(label, required=false, type='text') {
+  const lower = label.toLowerCase();
+  const isNotes = lower==='notes';
+  if (isNotes) {
+    return `<div><label class="muted">${escapeHTML(label)}</label><textarea name="${escapeAttr(label)}" rows="3" placeholder="${escapeAttr(label)}"></textarea></div>`;
+  }
+  return `<div><label class="muted">${escapeHTML(label)}</label><input name="${escapeAttr(label)}" type="${type}" placeholder="${escapeAttr(label)}" ${required?'required':''}></div>`;
+}
+
+function signupRowHTML(formId, s) {
+  const extraBits = Object.entries(s.extra||{})
+    .filter(([k])=>k!=='Full name' && k!=='Email')
+    .map(([k,v])=>`<span style="margin-right:8px;"><b>${escapeHTML(k)}:</b> ${escapeHTML(String(v))}</span>`).join('');
+  return `
+    <div class="list-row">
+      <div class="cell">
+        <div style="font-weight:600">${escapeHTML(s.full_name)}</div>
+        <div class="muted">${extraBits||''}</div>
+      </div>
+      <div class="cell"><span class="muted">${escapeHTML(s.email||'')}</span></div>
+      <div class="cell" data-action="toggle-paid" data-form="${formId}" data-id="${s.id}">
+        <span class="box ${s.paid?'on':''}"></span> Paid
+      </div>
+      <div class="cell" data-action="toggle-completed" data-form="${formId}" data-id="${s.id}">
+        <span class="box ${s.completed?'on':''}"></span> Completed
+      </div>
+    </div>
+  `;
+}
+
+function attachToggleHandlers(el, formId, key) {
+  let lastTap = 0;
+  const doToggle = (clear=false) => {
+    const id = el.getAttribute('data-id');
+    const db = loadDB();
+    const form = db.forms.find(f=>f.id===formId);
+    if (!form) return;
+    const s = form.signups.find(x=>x.id===id);
+    if (!s) return;
+    if (clear) s[key] = false;
+    else s[key] = !s[key];
+    saveDB(db);
+    renderFormPage(formId);
+  };
+  el.addEventListener('click', e => doToggle(false));
+  el.addEventListener('dblclick', e => doToggle(true));
+  el.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTap < 350) { doToggle(true); }
+    else { doToggle(false); }
+    lastTap = now;
+  });
+}
+
+function escapeHTML(s){ return String(s).replace(/[&<>"]|'/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); }
+function escapeAttr(s){ return escapeHTML(s).replace(/"/g,'&quot;'); }
+
+/* ========= Export / Import / Clear ========= */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const data = loadDB();
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'signup-data.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 500);
+});
+
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json';
+  inp.onchange = () => {
+    const file = inp.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const obj = JSON.parse(reader.result);
+        if (!obj || !Array.isArray(obj.forms)) throw new Error('Invalid file');
+        saveDB(obj); alert('Imported.'); render();
+      } catch(e){ alert('Import failed.'); }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if (confirm('This clears ALL local data on THIS device. Continue?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+  }
+});
+    </script>
+</body>
+
+</html>
