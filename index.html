@@ -412,43 +412,58 @@
         function renderFormsHome() {
             const db = loadDB();
             app.innerHTML = `
-    <section>
-      <h1>Your Forms</h1>
-      ${db.forms.length ? '' : `<div class="muted">No forms yet. Create one below.</div>`}
-      <div style="display:grid; gap:12px;">
-        ${db.forms.map(f => `
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <div>
-                <div style="font-weight:600">${escapeHTML(f.title)}</div>
-                <div class="muted">${(f.fields||[]).join(' • ')}</div>
-                <div class="muted">
-                  ${f.venmo ? `<span class="pill">Venmo</span>`:''}
-                  ${f.cashapp ? `<span class="pill">Cash App</span>`:''}
+              <section>
+                <h1>Your Forms</h1>
+                ${db.forms.length ? '' : `<div class="muted">No forms yet. Create one below.</div>`}
+                <div style="display:grid; gap:12px;">
+                  ${db.forms.map(f => `
+                    <div class="card">
+                      <div class="row" style="justify-content:space-between; align-items:center;">
+                        <div>
+                          <div style="font-weight:600">${escapeHTML(f.title)}</div>
+                          <div class="muted">${(f.fields||[]).join(' • ')}</div>
+                          <div class="muted">
+                            ${f.venmo ? `<span class=\"pill\">Venmo</span>`:''}
+                            ${f.cashapp ? `<span class=\"pill\">Cash App</span>`:''}
+                          </div>
+                          <div class="row" style="gap:16px; margin-top:8px;">
+                            ${f.venmo ? `<div style=\"display:flex;flex-direction:column;align-items:center;\"><div style=\"font-size:12px;font-weight:600;\">Venmo</div><div id=\"qr-venmo-${f.id}\"></div></div>` : ''}
+                            ${f.cashapp ? `<div style=\"display:flex;flex-direction:column;align-items:center;\"><div style=\"font-size:12px;font-weight:600;\">Cash App</div><div id=\"qr-cashapp-${f.id}\"></div></div>` : ''}
+                          </div>
+                        </div>
+                        <div class="row">
+                          <a class="link" href="#/form/${f.id}">Open</a>
+                          <a class="link danger" href="javascript:void(0)" data-action="delete-form" data-id="${f.id}">Delete</a>
+                        </div>
+                      </div>
+                    </div>
+                  `).join('')}
                 </div>
-              </div>
-              <div class="row">
-                <a class="link" href="#/form/${f.id}">Open</a>
-                <a class="link danger" href="javascript:void(0)" data-action="delete-form" data-id="${f.id}">Delete</a>
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </section>
+              </section>
 
-    <section class="card">
-      <h2>Create a New Form</h2>
-      <div class="muted">Fields are editable (comma-separated). “Full name” & “Email” are automatically included.</div>
-      <form id="createForm" style="display:grid; gap:10px; max-width:700px; margin-top:8px;">
-        <input name="title" placeholder="Form title (e.g., Pins & Needles — 9PM)" required />
-        <input name="venmo" placeholder="Venmo link (https://venmo.com/u/handle)" />
-        <input name="cashapp" placeholder="Cash App link (https://cash.app/$cashtag)" />
-        <input name="fields" placeholder="Custom fields (comma-separated). Example: Phone, Notes" />
-        <button>Create Form</button>
-      </form>
-    </section>
-  `;
+              <section class="card">
+                <h2>Create a New Form</h2>
+                <div class="muted">Fields are editable (comma-separated). “Full name” & “Email” are automatically included.</div>
+                <form id="createForm" style="display:grid; gap:10px; max-width:700px; margin-top:8px;">
+                  <input name="title" placeholder="Form title (e.g., Pins & Needles — 9PM)" required />
+                  <input name="venmo" placeholder="Venmo link (https://venmo.com/u/handle)" />
+                  <input name="cashapp" placeholder="Cash App link (https://cash.app/$cashtag)" />
+                  <input name="fields" placeholder="Custom fields (comma-separated). Example: Phone, Notes" />
+                  <button>Create Form</button>
+                </form>
+              </section>
+            `;
+  // Render QR codes for each form
+  db.forms.forEach(f => {
+    if (f.venmo) {
+      const el = document.getElementById(`qr-venmo-${f.id}`);
+      if (el) new QRCode(el, { text: f.venmo, width: 96, height: 96, correctLevel: QRErrorCorrectLevel.M });
+    }
+    if (f.cashapp) {
+      const el = document.getElementById(`qr-cashapp-${f.id}`);
+      if (el) new QRCode(el, { text: f.cashapp, width: 96, height: 96, correctLevel: QRErrorCorrectLevel.M });
+    }
+  });
 
   document.getElementById('createForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -579,7 +594,6 @@ function renderFormPage(formId) {
     if (!full) { alert('Full name is required.'); return; }
     const email = (fd.get('Email')||'').toString().trim();
     const extra = {};
-    // include all user-defined fields
     (form.fields||[]).forEach(lbl => extra[lbl] = (fd.get(lbl)||'').toString());
     form.signups.unshift({
       id: uuid(),
@@ -591,8 +605,32 @@ function renderFormPage(formId) {
       created_at: new Date().toISOString()
     });
     saveDB(db);
+    // Instead of rerendering the whole page, just rerender the list section and reset the form
     e.target.reset();
-    renderFormPage(formId);
+    // Rerender the list section only
+    const listSection = document.querySelector('section:last-of-type .list');
+    if (listSection) {
+      listSection.innerHTML = `
+        <div class="list-head">
+          <div class="cell">Guest</div>
+          <div class="cell">Email</div>
+          <div class="cell">Paid</div>
+          <div class="cell">Completed</div>
+        </div>
+        ${form.signups.length ? form.signups.map(s => signupRowHTML(formId, s)).join('') :
+          `<div class="cell muted">No signups yet.</div>`}
+      `;
+      // Reattach toggle handlers for new rows
+      listSection.querySelectorAll('[data-action="toggle-paid"]').forEach(el=>{
+        attachToggleHandlers(el, formId, 'paid');
+      });
+      listSection.querySelectorAll('[data-action="toggle-completed"]').forEach(el=>{
+        attachToggleHandlers(el, formId, 'completed');
+      });
+    } else {
+      // fallback: rerender the whole page if not found
+      renderFormPage(formId);
+    }
   });
 
   // Toggle handlers (click = toggle, dblclick = clear)
