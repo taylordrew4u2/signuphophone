@@ -512,7 +512,7 @@ function renderFormPage(formId) {
         <h1>${escapeHTML(form.title)}</h1>
         <a class="link" href="#/forms">Back to Forms</a>
       </div>
-      <div class="muted">Each list is tied to this form. Edit fields/links below.</div>
+      <div class="muted">Each guest list is tied to this form. Edit fields/links below.</div>
     </section>
 
     <section class="card">
@@ -533,7 +533,7 @@ function renderFormPage(formId) {
     </section>
 
     <section class="card">
-      <h2>Add signup</h2>
+      <h2>Add Guest</h2>
       <form id="signupForm" style="display:grid; gap:10px; max-width:720px; margin-top:10px;">
         ${renderField('Full name', true)}
         ${renderField('Email')}
@@ -543,7 +543,7 @@ function renderFormPage(formId) {
     </section>
 
     <section class="card">
-      <h2>Signups</h2>
+      <h2>Guests</h2>
       <div class="list">
         <div class="list-head">
           <div class="cell">Guest</div>
@@ -552,10 +552,16 @@ function renderFormPage(formId) {
           <div class="cell">Completed</div>
         </div>
         ${form.signups.length ? form.signups.map(s => signupRowHTML(formId, s)).join('') :
-          `<div class="cell muted">No signups yet.</div>`}
+          `<div class="cell muted">No guests yet.</div>`}
       </div>
     </section>
   `;
+
+  // QR render (defer to ensure DOM is ready)
+  setTimeout(() => {
+    if (form.venmo) new QRCode(document.getElementById('qr-venmo'), { text: form.venmo, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
+    if (form.cashapp) new QRCode(document.getElementById('qr-cash'), { text: form.cashapp, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
+  }, 0);
 
   // QR render
   if (form.venmo) new QRCode(document.getElementById('qr-venmo'), { text: form.venmo, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
@@ -592,32 +598,8 @@ function renderFormPage(formId) {
       created_at: new Date().toISOString()
     });
     saveDB(db);
-    // Instead of rerendering the whole page, just rerender the list section and reset the form
     e.target.reset();
-    // Rerender the list section only
-    const listSection = document.querySelector('section:last-of-type .list');
-    if (listSection) {
-      listSection.innerHTML = `
-        <div class="list-head">
-          <div class="cell">Guest</div>
-          <div class="cell">Email</div>
-          <div class="cell">Paid</div>
-          <div class="cell">Completed</div>
-        </div>
-        ${form.signups.length ? form.signups.map(s => signupRowHTML(formId, s)).join('') :
-          `<div class="cell muted">No signups yet.</div>`}
-      `;
-      // Reattach toggle handlers for new rows
-      listSection.querySelectorAll('[data-action="toggle-paid"]').forEach(el=>{
-        attachToggleHandlers(el, formId, 'paid');
-      });
-      listSection.querySelectorAll('[data-action="toggle-completed"]').forEach(el=>{
-        attachToggleHandlers(el, formId, 'completed');
-      });
-    } else {
-      // fallback: rerender the whole page if not found
-      renderFormPage(formId);
-    }
+    renderFormPage(formId);
   });
 
   // Toggle handlers (click = toggle, dblclick = clear)
@@ -651,7 +633,7 @@ function renderGuests() {
       ${rows.length ? `
       <table class="table">
         <thead><tr>
-          <th>Form</th><th>Name</th><th>Email</th><th>Paid</th><th>Completed</th><th>Fields</th>
+          <th>Form</th><th>Guest</th><th>Email</th><th>Paid</th><th>Completed</th><th>Fields</th>
         </tr></thead>
         <tbody>
           ${rows.map(({form,s})=>`
