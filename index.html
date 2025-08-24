@@ -453,7 +453,7 @@
                 </form>
               </section>
             `;
-  // Render QR codes for each form after DOM update
+      // Render QR codes for each form after DOM update with error handling
   setTimeout(() => {
     db.forms.forEach(f => {
       if (f.venmo) {
@@ -505,6 +505,12 @@ function renderFormPage(formId) {
   const db = loadDB();
   const form = db.forms.find(f=>f.id===formId);
   if (!form) { app.innerHTML = `<div class="card">Form not found. <a class="link" href="#/forms">Back</a></div>`; return; }
+  
+  // Initialize signups array if it doesn't exist
+  if (!form.signups) {
+    form.signups = [];
+    saveDB(db);
+  }
 
   app.innerHTML = `
     <section>
@@ -588,43 +594,91 @@ function renderFormPage(formId) {
     const email = (fd.get('Email')||'').toString().trim();
     const extra = {};
     (form.fields||[]).forEach(lbl => extra[lbl] = (fd.get(lbl)||'').toString());
-    form.signups.unshift({
-      id: uuid(),
-      full_name: full,
-      email,
-      extra,
-      paid:false,
-      completed:false,
-      created_at: new Date().toISOString()
-    });
-    saveDB(db);
+    
+    // Get current DB state
+    const currentDb = loadDB();
+    const currentForm = currentDb.forms.find(f => f.id === formId);
+    
+    if (currentForm) {
+      // Add signup to current form
+      const signup = {
+        id: uuid(),
+        full_name: full,
+        email,
+        extra,
+        paid: false,
+        completed: false,
+        created_at: new Date().toISOString()
+      };
+      
+      if (!currentForm.signups) {
+        currentForm.signups = [];
+      }
+      
+      currentForm.signups.unshift(signup);
+      saveDB(currentDb);
+    }
+    
     e.target.reset();
     renderFormPage(formId);
   });
 
-  // Toggle handlers (click = toggle, dblclick = clear)
-  app.querySelectorAll('[data-action="toggle-paid"]').forEach(el=>{
-    attachToggleHandlers(el, formId, 'paid');
-  });
-  app.querySelectorAll('[data-action="toggle-completed"]').forEach(el=>{
-    attachToggleHandlers(el, formId, 'completed');
-  });
+          setTimeout(() => { 
+            try {
+              if (form.venmo) {
+                const el = document.getElementById('qr-venmo');
+                if (el) {
+                  if (typeof QRCode !== 'undefined') {
+                    new QRCode(el, { text: form.venmo, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
+                  } else {
+                    console.error('QRCode is not defined');
+                    el.innerHTML = '<span style="color:red">QR error</span>';
+                  }
+                }
+              }
+              if (form.cashapp) {
+                const el = document.getElementById('qr-cash');
+                if (el) {
+                  if (typeof QRCode !== 'undefined') {
+                    new QRCode(el, { text: form.cashapp, width:192, height:192, correctLevel: QRErrorCorrectLevel.M });
+                  } else {
+                    console.error('QRCode is not defined');
+                    el.innerHTML = '<span style="color:red">QR error</span>';
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('QR code error:', err);
+            }
+            // Attach toggle handlers after QR rendering
+            app.querySelectorAll('[data-action="toggle-paid"]').forEach(el=>{
+              attachToggleHandlers(el, formId, 'paid');
+            });
+            app.querySelectorAll('[data-action="toggle-completed"]').forEach(el=>{
+              attachToggleHandlers(el, formId, 'completed');
+            });
+          }, 0);
 }
 
 function renderGuests() {
   const db = loadDB();
   const rows = [];
-  db.forms.forEach(f=>{
-    (f.signups||[]).forEach(s=>{
-      rows.push({ form:f, s });
-    });
+  db.forms.forEach(f => {
+    if (f.signups && Array.isArray(f.signups)) {
+      f.signups.forEach(s => {
+        rows.push({ form: f, s });
+      });
+    }
   });
-  rows.sort((a,b)=> (a.s.created_at < b.s.created_at) ? 1 : -1);
+  rows.sort((a,b) => new Date(b.s.created_at) - new Date(a.s.created_at));
 
   app.innerHTML = `
     <section>
       <div class="row" style="justify-content:space-between; align-items:center;">
         <h1>Guests (All Forms)</h1>
+            } catch (err) {
+              console.error('QR code error:', err);
+            }
         <a class="link" href="#/forms">Back to Forms</a>
       </div>
     </section>
